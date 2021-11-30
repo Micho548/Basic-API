@@ -1,95 +1,29 @@
 package main
 
 import (
-	"encoding/json"
+	// "encoding/json"
 	"fmt"
-	"math/rand"
+
 	"net/http"
-	"strconv"
+	"rest-api/controllers"
 
 	"github.com/gorilla/mux"
 )
-
-type Post struct {
-	ID    string `json:"id"`
-	Title string `json:"title"`
-	Body  string `json:"body"`
-}
-
-var posts []Post
-
-func getPosts(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(posts)
-}
-
-func createPost(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "application/json")
-	var post Post
-	_ = json.NewDecoder(r.Body).Decode(&post)
-	post.ID = strconv.Itoa(rand.Intn(1000000))
-	posts = append(posts, post)
-	json.NewEncoder(w).Encode(&post)
-}
-
-func getPost(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "application/json")
-	params := mux.Vars(r)
-
-	for _, item := range posts {
-		if item.ID == params["id"] {
-			json.NewEncoder(w).Encode(item)
-			return
-		}
-	}
-	json.NewEncoder(w).Encode(&Post{})
-}
-
-func updatePost(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "application/json")
-	params := mux.Vars(r)
-	for index, item := range posts {
-		if item.ID == params["id"] {
-			posts = append(posts[:index], posts[index+1:]...)
-
-			var post Post
-			_ = json.NewDecoder(r.Body).Decode(&post)
-			post.ID = params["id"]
-			posts = append(posts, post)
-			json.NewEncoder(w).Encode(&post)
-
-			return
-		}
-	}
-
-	json.NewEncoder(w).Encode(posts)
-}
-
-func deletePost(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "application/json")
-	params := mux.Vars(r)
-	for index, item := range posts {
-		if item.ID == params["id"] {
-			posts = append(posts[:index], posts[index+1:]...)
-			break
-		}
-	}
-	json.NewEncoder(w).Encode(posts)
-}
 
 func main() {
 	fmt.Println("Backend running...")
 
 	router := mux.NewRouter()
 
-	posts = append(posts, Post{ID: "1", Title: "My first post", Body: "This is the content of my first post"})
-	posts = append(posts, Post{ID: "2", Title: "My second post", Body: "This is the content of my second post"})
-
-	router.HandleFunc("/post", getPosts).Methods("GET")
-	router.HandleFunc("/post/{id}", getPost).Methods("GET")
-	router.HandleFunc("/create", createPost).Methods("POST")
-	router.HandleFunc("/update/{id}", updatePost).Methods("PUT")
-	router.HandleFunc("/delete/id", deletePost).Methods("DELTE")
+	routes(router)
 
 	http.ListenAndServe(":8000", router)
+}
+
+func routes(router *mux.Router) {
+	router.HandleFunc("/post", controllers.GetPosts).Methods("GET")
+	router.HandleFunc("/post/{id}", controllers.GetPost).Methods("GET")
+	router.HandleFunc("/create", controllers.CreatePost).Methods("POST")
+	router.HandleFunc("/update/{id}", controllers.UpdatePost).Methods("PUT")
+	router.HandleFunc("/delete/{id}", controllers.DeletePost).Methods("DELETE")
 }
